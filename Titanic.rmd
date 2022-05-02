@@ -1,6 +1,6 @@
 ---
 title: "Titanic Report"
-author: "Connor Fewin, Justin Priede, Nick Burkett, Tyler Collins"
+author: "Connor Fewin"
 date: '2022-04-19'
 output: html_document
 ---
