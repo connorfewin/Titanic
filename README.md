@@ -1,5 +1,5 @@
 # Titanic
-This was a data visualization project about the Titanic
+This was a data visualization project about the Titanic in R
 
 This the Titanic.rmd file contains R code that analyzes the data and creates all of the visuals.
 
