@@ -1,10 +1,10 @@
 ---
 title: "Titanic Report"
-author: "Connor Fewin, Justin Priede, Nick Burkett, T-bone"
+author: "Connor Fewin, Justin Priede, Nick Burkett, Tyler Collins"
 date: '2022-04-19'
 output: html_document
 ---
-
+***
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
 ```
@@ -12,6 +12,9 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(kableExtra)
+library(ggpubr)
+library(tidyr)
 ```
 ## Introduction
 The data set being analyzed is the data of the people on board the notorious Titanic that set sail on April 15th, 1912. It was one of the first boats of its type, bringing a luxurious form of travel to the water. The idea was to travel from England to the United States. However, as most people know, the ship sank in the Atlantic Ocean after hitting an iceberg. Out of the total 2,200 passengers and crew members, some 1,500 people died that tragic evening. There have been reports of what happened that night the Titanic went down, there is also an extremely popular movie that came out about it, however, stories can be exaggerated and modified.The only thing that cannot be disputed, is the data. So, the goal of this project is to tell the story of the Titanic crash through the raw data. Who was on the Titanic? Who survived? Who Died? And if you were there, what would have been your fate?
@@ -25,8 +28,34 @@ data <- read_csv("https://raw.githubusercontent.com/datasciencedojo/datasets/mas
 ```{r, echo=FALSE}
 head(data)
 ```
+
+```{r, echo=FALSE}
+
+df <- data %>% 
+  group_by(Survived) %>% # Variable to be transformed
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc))
+
+ggplot(df, aes(x = "", y = perc, fill = factor(Survived))) +
+  geom_col() +
+  geom_label(aes(label = labels),
+             position = position_stack(vjust = 0.5),
+             show.legend = FALSE) +
+  coord_polar(theta = "y")+
+  theme_minimal()+
+  labs(title= "How Many People Survived?",fill = "Survival Status")+
+  scale_fill_manual(values = c("seashell3", "cornflowerblue"), labels = c("Dead", "Survived"))+
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+```
+
+
 ***
 ## Gender
+We filtered by **gender** and whether or not each person **survived**. Based on this data we were able to decide the survival rate of both men and women on the Titanic:
 ```{r, echo=FALSE}
 men_data <- data %>%
   filter(Sex=='male')
@@ -36,7 +65,7 @@ girl_data <- data %>%
 ```{r, echo=FALSE}
 men_survived <- men_data %>%
   filter(Survived==1)
-m_survivalRate <- (count(men_survived)/(count(men_data))) * 100
+m_survivalRate <- round((count(men_survived)/(count(men_data))) * 100, 2)
 
 ```
 #### **Mens Survival Rate** = `r m_survivalRate`%
@@ -44,31 +73,196 @@ m_survivalRate <- (count(men_survived)/(count(men_data))) * 100
 ```{r, echo=FALSE}
 women_survived <- girl_data %>%
   filter(Survived==1)
-w_survivalRate <- (count(women_survived)/(count(girl_data))) * 100
+w_survivalRate <- round((count(women_survived)/(count(girl_data))) * 100, 2)
 
 ```
 #### **Womens Survival Rate** = `r w_survivalRate`%
+
 
 ***
 
 ## Age
 
 ```{r, echo=FALSE}
-p<-ggplot(data, aes(x=Age,  fill=factor(Survived)))+
-  geom_histogram(position="identity", alpha = 0.5, bins = 40)+
+p<-ggplot(data, aes(x=Age, fill=factor(Survived)))+
+  geom_histogram(position="identity", alpha = 0.5, bins = 30)+
   labs(title = "Survival by Age and Separated by Gender", fill="Survived")+
-  scale_fill_discrete(labels = c("Dead", "Survived"))+
+  scale_fill_manual(values = c("royalblue2", "seagreen2"), labels = c("Dead", "Survived"))+
   facet_wrap(~Sex)
 
 p
+```
+
+**Inference: **Out of the groups that survived (both men and women) the results are slightly skewed right, so it can be inferred that younger people had a better chance of surviving.
+
+Another way to see which ages survived is through this scatterplot:
+
+```{r, echo=FALSE}
+
+ggplot(data, aes(x=PassengerId, y=Age, color=factor(Survived)))+
+  geom_point()+
+  scale_color_manual(values=c("midnightblue", "mediumspringgreen"), labels = c("Died", "Survived"))+
+  labs(color = "Survival Status")
+
 ```
 
 ***
 
 ## Class
 
+We then tested the survival rate per class. This gave insight to how socioeconomic status (based on class) affected survival.
+```{r, echo=FALSE}
+firstClass <- data %>%
+  filter(Pclass == 1)
+firstSurvived <- firstClass %>%
+  filter(Survived == 1)
+firstRate <- round((count(firstSurvived)/count(firstClass))*100, 2)
+
+secondClass <- data %>%
+  filter(Pclass == 2)
+secondSurvived <- secondClass %>%
+  filter(Survived == 1)
+secondRate <- round((count(secondSurvived)/count(secondClass))*100, 2)
+
+thirdClass <- data %>%
+  filter(Pclass == 3)
+thirdSurvived <- thirdClass %>%
+  filter(Survived == 1)
+thirdRate <- round((count(thirdSurvived)/count(thirdClass))*100, 2)
+
+```
+```{r, echo=FALSE}
+
+ggplot(data = data, aes(x=Pclass, fill=factor(Survived)))+
+  geom_histogram(binwidth = 0.5, alpha=0.6)+
+  scale_fill_manual(values=c("gray12", "goldenrod"), labels = c("Died", "Survived"))+
+  labs(fill="Survival Status")+
+  scale_x_discrete(name ="Class", 
+                    limits=c("1","2","3"))
+
+```
+
+#### **First Class Survival Rate:** `r firstRate`%
+#### **Second Class Survival Rate:** `r secondRate`%
+#### **Third Class Survival Rate:** `r thirdRate`%
+
+```{r, echo=FALSE}
+classes<-c("First", "Second", "Third")
+rates<-c(firstRate, secondRate, thirdRate)
+
+df<-data.frame(classes, rates)
+
+```
+
+**Inference: **It is safe to say that it **pays** to be in *first class*. Basically what I am getting at is that the higher class you are in, the better chance you would have had at surviving.
+
 ***
 ## Embark
 
+The Titanic picked up passengers from three different ports: **Southhampton**, **Queenstown**, and **Cherbourg**. We can if where a passenger departed affects survival rates. Furthermore, based on what we know about which demographics so far contribute to the probability of survival, we can infer certain things about the three areas of departure.
+
+### **Embarked by Gender**
+
+```{r, echo=FALSE}
+
+SouthHampton <- data %>%
+  filter(Embarked=='S')
+
+Queenstown <- data%>%
+  filter(Embarked=='Q')
+
+Cherbourg <- data%>%
+  filter(Embarked=='C')
+
+
+sPlot<-ggplot(SouthHampton, aes(x=Sex, fill=factor(Survived)))+
+  geom_bar(position="identity", alpha=0.6)+
+  theme(axis.title.x = element_blank(), 
+        axis.title.y = element_blank())+
+  labs(title = "Southhampton", fill="Survival Status")
+
+qPlot<-ggplot(Queenstown, aes(x=Sex, fill=factor(Survived)))+
+  geom_bar(position="identity", alpha=0.6)+
+  theme(axis.title.x = element_blank(), 
+        axis.title.y = element_blank())+
+  labs(title = "Queenstown")
+
+cPlot<-ggplot(Cherbourg, aes(x=Sex, fill=factor(Survived)))+
+  geom_bar(position="identity", alpha=0.6)+
+  theme(axis.title.x = element_blank(), 
+        axis.title.y = element_blank())+
+  labs(title = "Cherbourg")
+
+
+
+p <- ggarrange(sPlot, qPlot, cPlot, common.legend = TRUE, legend = "top",
+               label.x = "Sex", label.y = "Count",
+               ncol = 3, nrow = 1)+
+  labs(title = "Check this out")
+annotate_figure(p, bottom = text_grob("Sex",
+               face = "bold", size = 14), 
+               left = text_grob("Count", face = "bold", size = 14))
+
+    
+```
+
+**Inference**: Based on the graph above you can see that **men** had the **best** chance of survival if they embarked from **Cherbourg**, and **women** had the **worst** chance of survival if they embarked from **Southhampton**, which is interesting because that is where a majority of passengers embarked from.
+
+***
+
+### **Embarked By Class**
+
+```{r, echo=FALSE}
+cleanData <- filter(data, Embarked != "NA")
+
+ggplot(cleanData, aes(x = Pclass, fill=factor(Survived)))+
+  geom_bar(position="identity", alpha=0.6)+
+  labs(fill = "Survival Status:")+
+  theme(legend.position = "top")+
+  scale_fill_manual(values = c("gray60", "dodgerblue1"), labels = c("Dead", "Survived"))+
+  facet_wrap(Embarked ~ ., scales = "free")
+
+```
+
+**Inference**: Although similar inferences can be made about survival to the Embarked By Gender plot, an interesting takeaway from the graph above is regarding socioeconomic status. It can be infered that **Cherbourg** may have been in a better socioeconomic place as a majority of their passengers were first class passangers. 
+
 ***
 ## Relatives
+In the Titanic movie, this is also general emergency protocol, women and children are evacuated first. However, a woman or child that has a husband, parents, or siblings on board may receive a greater sense of urgency when it comes to their evacuation, especially when a loved one is making sure another loved one is safe and sound. 
+
+```{r}
+data$Relatives <- data$SibSp + data$Parch
+```
+The code **above** concatenates the SibSp and Parch columns which combine to show how many **relatives** each passenger had on board the Titanic. The Relatives column is then added to the data set. A subset of the data set was then taken so we can compare number of relatives and whether or not that passenger **survived**.
+```{r, echo=FALSE}
+relativeData<- data %>% select(SibSp, Parch, Relatives, Survived)
+print(head(relativeData))
+```
+
+***
+
+
+
+```{r, echo=FALSE}
+relativeData%>%
+  group_by(Relatives)%>%
+  summarise(n = mean(Survived))%>%
+  ggplot() + geom_point(aes(Relatives, n, size = n, color = "red"))+
+  scale_x_continuous(breaks = seq(0, 10, by = 1))+
+  theme_dark()+
+  labs(title = "Survival Rates Based on Number of Relatives on Board", 
+       x = "Number of Relatives on Board",
+       y = "Survival Rate")+
+  theme(legend.position = "none")
+  
+```
+
+**Inference**: As you can see in the graph above, passengers had the best chance of surviving if they had **1-3 relatives on board**. It can be assumed that it does pay to have loved ones with you in times of an emergency, especially in the case of the Titanic. However, if you have **too many** loved ones on board, maybe it acted as a distraction while trying to make sure too many people were ok, as passengers with **4, 5, 7, and even 10 relatives** on board actually had a **lower chance of survival** than if you were there **alone**.
+
+***
+
+## Conclusion
+
+In conclusion there are multiple factors that help your chance of surviving the Titanic. The most significant is **gender.** It is safe to say that if you were a **woman**, you had a significantly better chance of surviving the Titanic, specifically you had a **`r w_survivalRate - m_survivalRate`%** better chance of surviving. Age had a slight impact on survival rates. Although it wasn't as significant as gender, it certainly wouldn't have hurt to be **younger.** As mentioned in the report, it **pays to be in first class**. **First class** passengers had a **`r firstRate - secondRate`%** higher chance of surviving compared to **second class** passengers, and an astonishing **`r firstRate - thirdRate`%** better chance of surviving compared to **third class** passengers. Lastly, to take a central theme from the incredible movie *Fast and Furious*, family is important. Even having one relative on the boat with you immediately gave you about a **25%** better chance of surviving.
+
+There are certain measurable factors that could have helped a passenger survive the Titanic incident, however, there are other immeasurable factors that also contributed. To quote Rose from the blockbuster movie *Titanic*, "Fifteen-hundred people went into the sea, when Titanic sank from under us. There were 20 boats floating nearby…and only one came back. One. Six were saved from the water, myself included. Six…out of 1500. Afterward, the 700 people in the boats had nothing to do but wait…wait to die…wait to live…wait for an absolution…that would never come." You cannot measure the significance of selfishness, ego, or greed, just like you cannot measure love, and these immeasurable factors will leave holes in our data driven story of what happened on the Titanic, but I hope the data helped you piece some of it together. Thank you.
