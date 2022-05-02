@@ -1,0 +1,74 @@
+---
+title: "Titanic Report"
+author: "Connor Fewin, Justin Priede, Nick Burkett, T-bone"
+date: '2022-04-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+```{r, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+```
+## Introduction
+The data set being analyzed is the data of the people on board the notorious Titanic that set sail on April 15th, 1912. It was one of the first boats of its type, bringing a luxurious form of travel to the water. The idea was to travel from England to the United States. However, as most people know, the ship sank in the Atlantic Ocean after hitting an iceberg. Out of the total 2,200 passengers and crew members, some 1,500 people died that tragic evening. There have been reports of what happened that night the Titanic went down, there is also an extremely popular movie that came out about it, however, stories can be exaggerated and modified.The only thing that cannot be disputed, is the data. So, the goal of this project is to tell the story of the Titanic crash through the raw data. Who was on the Titanic? Who survived? Who Died? And if you were there, what would have been your fate?
+  
+***
+
+## Data
+```{r, include=FALSE}
+data <- read_csv("https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv")
+```
+```{r, echo=FALSE}
+head(data)
+```
+***
+## Gender
+```{r, echo=FALSE}
+men_data <- data %>%
+  filter(Sex=='male')
+girl_data <- data %>%
+  filter(Sex=='female')
+```
+```{r, echo=FALSE}
+men_survived <- men_data %>%
+  filter(Survived==1)
+m_survivalRate <- (count(men_survived)/(count(men_data))) * 100
+
+```
+#### **Mens Survival Rate** = `r m_survivalRate`%
+
+```{r, echo=FALSE}
+women_survived <- girl_data %>%
+  filter(Survived==1)
+w_survivalRate <- (count(women_survived)/(count(girl_data))) * 100
+
+```
+#### **Womens Survival Rate** = `r w_survivalRate`%
+
+***
+
+## Age
+
+```{r, echo=FALSE}
+p<-ggplot(data, aes(x=Age,  fill=factor(Survived)))+
+  geom_histogram(position="identity", alpha = 0.5, bins = 40)+
+  labs(title = "Survival by Age and Separated by Gender", fill="Survived")+
+  scale_fill_discrete(labels = c("Dead", "Survived"))+
+  facet_wrap(~Sex)
+
+p
+```
+
+***
+
+## Class
+
+***
+## Embark
+
+***
+## Relatives
